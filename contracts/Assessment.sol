@@ -10,6 +10,15 @@ contract Assessment {
     event Deposit(uint256 amount);
     event Withdraw(uint256 amount);
 
+    enum TransactionType { DEPOSIT, WITHDRAW }  
+
+    struct Transaction {
+      TransactionType transactionType; // for now, deposit and withdraw (may add transfer)
+      uint256 amount;
+    }
+
+    Transaction[] public transactions;
+
     constructor(uint initBalance) payable {
         owner = payable(msg.sender);
         balance = initBalance;
@@ -33,6 +42,9 @@ contract Assessment {
 
         // emit the event
         emit Deposit(_amount);
+
+        // add the transaction
+        transactions.push(Transaction(TransactionType.DEPOSIT, _amount));
     }
 
     // custom error
@@ -56,5 +68,13 @@ contract Assessment {
 
         // emit the event
         emit Withdraw(_withdrawAmount);
+
+        // add the transaction
+        transactions.push(Transaction(TransactionType.WITHDRAW, _withdrawAmount));
+    }
+
+    function getTransactions() public view returns(Transaction[] memory) {
+      require(msg.sender == owner, "You are not the owner of this account");
+      return transactions;
     }
 }

@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, use} from "react";
 import {ethers} from "ethers";
 import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
 
@@ -7,6 +7,10 @@ export default function HomePage() {
   const [account, setAccount] = useState(undefined);
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
+
+  const [transactions, setTransactions] = useState([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [transactionHistoryShown, setTransactionHistoryShown] = useState(false);
 
   const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const atmABI = atm_abi.abi;
@@ -75,6 +79,28 @@ export default function HomePage() {
     }
   }
 
+  const showTransactions = async() => {
+    if (atm) {
+      setIsHistoryLoading(true);
+      try {
+        let txs = await atm.getTransactions();
+        setTransactions(txs);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setIsHistoryLoading(false);
+      }
+    }
+  }
+
+  const toggleTransactionHistory = () => {
+    setTransactionHistoryShown(!transactionHistoryShown);
+
+    if (transactionHistoryShown) {
+      showTransactions();
+    }
+  }
+
   const initUser = () => {
     // Check to see if user has Metamask
     if (!ethWallet) {
@@ -94,13 +120,66 @@ export default function HomePage() {
       <div>
         <p>Your Account: {account}</p>
         <p>Your Balance: {balance}</p>
-        <button onClick={deposit}>Deposit 1 ETH</button>
-        <button onClick={withdraw}>Withdraw 1 ETH</button>
+
+        <div>
+          <button onClick={deposit}>Deposit 1 ETH</button>
+          <button onClick={withdraw}>Withdraw 1 ETH</button>
+        </div>
+        
+        <button onClick={toggleTransactionHistory}>{
+          transactionHistoryShown ? 
+          "Hide Transaction History" : 
+          "Show Transaction History"} 
+        </button>
+
+        {transactionHistoryShown && (
+          <div>
+          <h2>Transaction History</h2>
+
+          {isHistoryLoading ? ( 
+            <ul className = "transactionsList">
+              {[...transactions].reverse().map((tx, index) => {
+                let _type = "";
+                let _amt = parseInt(tx.amount, 16);
+                let _ft = "";
+
+                if (tx.transactionType === 0) {
+                  _type = "deposited";
+                  _ft = "to"
+                } else if (tx.transactionType === 1) {
+                  _type = "withdrew";
+                  _ft = "from"
+                } 
+
+                return (
+                  <li key={index}>Transaction {transactions.length - index}: You {_type} {_amt} ETH {_ft} the ATM. </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <div>Loading Transactions...</div>
+          )}
+        </div>
+        )}
+        <style jsx>{`
+          .transactionsList {
+            list-style-type: none;
+            padding: 0;
+          }
+          button {
+            margin: 10px 10px 10px 10px;
+          }
+        `}
+        </style>
       </div>
     )
   }
 
-  useEffect(() => {getWallet();}, []);
+  useEffect(() => {getWallet();  }, []);
+
+  useEffect(() => {
+    showTransactions();
+  }, [isHistoryLoading])
 
   return (
     <main className="container">
