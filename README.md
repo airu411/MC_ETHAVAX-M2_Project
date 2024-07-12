@@ -1,4 +1,4 @@
-# MC_ETHAVAX-M1_Project
+# MC_ETHAVAX-M2_Project
 
 The project is a simple smart contract management for withdrawing, depositing, and transferring.
 
