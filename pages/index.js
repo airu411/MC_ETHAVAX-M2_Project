@@ -7,10 +7,12 @@ export default function HomePage() {
   const [account, setAccount] = useState(undefined);
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
+  const [rcvrAddress, setRcvrAddress] = useState("");
+  const [amount, setAmount] = useState(1);
 
   const [transactions, setTransactions] = useState([]);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [transactionHistoryShown, setTransactionHistoryShown] = useState(false);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [receiverAddressShown, setReceiverAddressShown] = useState({});
 
   const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const atmABI = atm_abi.abi;
@@ -65,41 +67,50 @@ export default function HomePage() {
 
   const deposit = async() => {
     if (atm) {
-      let tx = await atm.deposit(1);
+      let tx = await atm.deposit(amount);
       await tx.wait()
       getBalance();
+      getAndSetTransactions();
     }
   }
 
   const withdraw = async() => {
     if (atm) {
-      let tx = await atm.withdraw(1);
+      let tx = await atm.withdraw(amount);
       await tx.wait()
       getBalance();
+      getAndSetTransactions();
     }
   }
 
-  const showTransactions = async() => {
+  const transfer = async() => {
     if (atm) {
-      setIsHistoryLoading(true);
-      try {
-        let txs = await atm.getTransactions();
-        setTransactions(txs);
-      } catch (err) {
-        console.log(err);
-      } finally {
-        setIsHistoryLoading(false);
-      }
+      let tx = await atm.transfer(rcvrAddress, amount);
+      await tx.wait()
+      getBalance();
+      getAndSetTransactions();
+    }
+  }
+
+  const getAndSetTransactions = async() => {
+    if (atm) {
+      let txs = await atm.getTransactions();
+      setTransactions(txs);
     }
   }
 
   const toggleTransactionHistory = () => {
-    setTransactionHistoryShown(!transactionHistoryShown);
-
-    if (transactionHistoryShown) {
-      showTransactions();
-    }
+    setShowTransactionHistory(!showTransactionHistory);
+    getAndSetTransactions();
   }
+
+  const toggleReceiverAddress = (index) => {
+    setReceiverAddressShown(prevState => ({
+      ...prevState,
+      [index]: !prevState[index]
+    }));
+  };
+
 
   const initUser = () => {
     // Check to see if user has Metamask
@@ -122,75 +133,95 @@ export default function HomePage() {
         <p>Your Balance: {balance}</p>
 
         <div>
-          <button onClick={deposit}>Deposit 1 ETH</button>
-          <button onClick={withdraw}>Withdraw 1 ETH</button>
+          <label>Amount: </label>
+          <input type="text" value={amount}
+            onChange={(e) => setAmount(e.target.value)} />
+        </div>
+
+        <div>
+          <button onClick={deposit}>Deposit ETH</button>
+          <button onClick={withdraw}>Withdraw ETH</button>
+        </div>
+
+        <div>
+          <label>Send to: </label>
+          <input type="text" value={rcvrAddress}
+            onChange={(e) => setRcvrAddress(e.target.value)} />
+          <button onClick={transfer}>Transfer ETH</button>
         </div>
         
-        <button onClick={toggleTransactionHistory}>{
-          transactionHistoryShown ? 
+        <button
+          onClick={toggleTransactionHistory}>{
+          showTransactionHistory ? 
           "Hide Transaction History" : 
           "Show Transaction History"} 
         </button>
 
-        {transactionHistoryShown && (
+        {showTransactionHistory && (
           <div>
-          <h2>Transaction History</h2>
+            <h2>Transaction History</h2>
 
-          {isHistoryLoading ? ( 
-            <ul className = "transactionsList">
-              {[...transactions].reverse().map((tx, index) => {
-                let _type = "";
-                let _amt = parseInt(tx.amount, 16);
-                let _ft = "";
+              <ul className = "transactionsList">
+                {[...transactions].reverse().map((tx, index) => {
+                  let _type = "";
+                  let _amt = parseInt(tx.amount);
+                  let _ft = "";
+                  let _rcvr = "";
+                  let receiverButtonStyle = {
+                    padding: 0,
+                    border: "none",
+                    background: "none",
+                  }
 
-                if (tx.transactionType === 0) {
-                  _type = "deposited";
-                  _ft = "to"
-                } else if (tx.transactionType === 1) {
-                  _type = "withdrew";
-                  _ft = "from"
-                } 
+                  if (tx.transactionType === 0) {
+                    _type = "deposited";
+                    _ft = "to";
+                    _rcvr = "the ATM";
+                  } else if (tx.transactionType === 1) {
+                    _type = "withdrew";
+                    _ft = "from";
+                    _rcvr = "the ATM";
+                  } else if (tx.transactionType === 2) {
+                    _type = "transferred";
+                    _ft = "to";
 
-                return (
-                  <li key={index}>Transaction {transactions.length - index}: You {_type} {_amt} ETH {_ft} the ATM. </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <div>Loading Transactions...</div>
-          )}
-        </div>
+                    _rcvr = receiverAddressShown[transactions.length - index] ? 
+                      tx.receiverAddress : "000000000000000000000000000000000000000000";
+                    if (_rcvr === "000000000000000000000000000000000000000000") {
+                      receiverButtonStyle = {
+                        padding: 0,
+                        border: "none",
+                        background: "black",
+                        color: "black",
+                      }
+                    }
+                  }
+
+                  return (
+                    <li key={index}>
+                      <b>Transaction #{transactions.length - index}</b>: 
+                      You {_type} {_amt} ETH {_ft} 
+                      <button style={receiverButtonStyle} 
+                        onClick={() => toggleReceiverAddress(transactions.length - index)}>
+                        {_rcvr} 
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+
+          </div>
         )}
-        <style jsx>{`
-          .transactionsList {
-            list-style-type: none;
-            padding: 0;
-          }
-          button {
-            margin: 10px 10px 10px 10px;
-          }
-        `}
-        </style>
       </div>
     )
   }
 
   useEffect(() => {getWallet();  }, []);
 
-  useEffect(() => {
-    showTransactions();
-  }, [isHistoryLoading])
-
   return (
     <main className="container">
       <header><h1>Welcome to the Metacrafters ATM!</h1></header>
       {initUser()}
-      <style jsx>{`
-        .container {
-          text-align: center
-        }
-      `}
-      </style>
     </main>
   )
 }

@@ -1,0 +1,30 @@
+html {
+  background: #ef790b;
+}
+body {
+  background: #312c2e;
+  color: white;
+  padding: 1em 0 1em 0;
+  height: 93.7vh;
+  border-radius: 1em;
+  font-family: Arial, Helvetica, sans-serif;
+}
+button {
+  margin: 1em;
+  padding: 0.5em 1em;
+  background-color: black;
+  color: white;
+}
+
+.container {
+  text-align: center
+}
+.transactionsList {
+  list-style-type: none;
+  margin: 1em;
+  max-height: 20em;
+  overflow-y: auto;
+}
+.transactionsList::-webkit-scrollbar {
+  display: none;
+}
