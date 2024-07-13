@@ -4,7 +4,7 @@ The project is a simple smart contract management for withdrawing, depositing, a
 
 ## Description
 
-This is in fulfillment of the second module of the ETH + AVAX Intermediate course in Metacrafters. The provided starter project from Metacrafters included connecting to MetaMask, depositing to the ATM, and withdrawing from the ATM among others. A few things were then added to the project, such as transferring the token and the transaction history. The deposit and withdraw functions that were provided were modified so that they would be shown in the transaction history. The frontend was also updated to accommodate the changes that were made.
+This is in fulfillment of the second module of the ETH + AVAX Intermediate course in Metacrafters. The provided starter project from Metacrafters included connecting to MetaMask, depositing to the ATM, and withdrawing from the ATM among others. A few things were then added to the project, such as transferring the token, the structure for the transactions, and the actual transaction history. The deposit and withdraw functions that were provided were modified so that they would be shown in the transaction history. The frontend was also updated to accommodate the changes that were made.
 
 ## Getting Started
 
