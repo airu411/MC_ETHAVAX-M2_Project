@@ -7,20 +7,33 @@ contract Assessment {
     address payable public owner;
     mapping(address => uint256) public balances;
 
-    event Deposit(uint256 amount);
-    event Withdraw(uint256 amount);
-    event Transfer(address indexed senderAddress, address indexed receiverAddress, uint256 amount);
+    event AddTask(address indexed userAddress, uint256 taskID, string taskName);
+    event CompleteTask(address indexed userAddress, uint256 taskID, string taskName);
+    event UpdateBalance(address indexed userAddress, uint256 amount);
+    event GetReward(address indexed userAddress, uint256 amount);
 
-    enum TransactionType { DEPOSIT, WITHDRAW, TRANSFER }  
+    // For now, 3 tasks = 1 ETH added to the user's balance
+    uint256 taskPerReward = 3; 
+    uint256 numOfTasks = 0; 
+    uint256 numOfCompletedTasks = 0;
 
-    struct Transaction {
-      TransactionType transactionType;
-      address receiverAddress;
-      address senderAddress;
-      uint256 amount;
+    Task[] public tasks;
+    Activity[] public activities;
+
+    enum ActivityType { ADD_TASK, COMPLETE_TASK, GET_REWARDS }
+
+    struct Task {
+      uint256 taskID;
+      string taskName;
+      bool isCompleted;
     }
 
-    Transaction[] public transactions;
+    struct Activity {
+      ActivityType activityType;
+      uint256 taskID;
+      address receiverAddress;
+      uint256 amount;
+    }
 
     constructor(uint initBalance) payable {
         owner = payable(msg.sender);
@@ -31,73 +44,118 @@ contract Assessment {
         return balances[msg.sender];
     }
 
-    function deposit(uint256 _amount) public payable {
-        uint _previousBalance = balances[msg.sender];
-
-        // make sure this is the owner
-        require(msg.sender == owner, "You are not the owner of this account");
-
-        // perform transaction
-        balances[owner] += _amount;
-
-        // assert transaction completed successfully
-        assert(balances[owner] == _previousBalance + _amount);
-
-        // emit the event
-        emit Deposit(_amount);
-
-        // add the transaction
-        transactions.push(Transaction(TransactionType.DEPOSIT, address(this), owner, _amount));
-    }
-
-    // custom error
-    error InsufficientBalance(uint256 balance, uint256 amount);
-
-    function withdraw(uint256 _withdrawAmount) public {
-        require(msg.sender == owner, "You are not the owner of this account");
-        
-        uint _previousBalance = balances[owner];
-
-        if (balances[owner] < _withdrawAmount) {
-            revert InsufficientBalance({
-                balance: balances[owner],
-                amount: _withdrawAmount
-            });
+    function addTask(string memory _taskName) public {
+      require(msg.sender == owner, "You are not the owner of this account.");
+      
+      // check if the task already exists
+      for (uint i = 0; i < tasks.length; i++) {
+        if (keccak256(abi.encodePacked(tasks[i].taskName)) == keccak256(abi.encodePacked(_taskName))) {
+          if (!tasks[i].isCompleted) {
+            revert("There is already a similar task with that name.");
+          }
         }
+      }
 
-        // withdraw the given amount
-        balances[owner] -= _withdrawAmount;
+      numOfTasks++;
 
-        // assert the balance is correct
-        assert(balances[owner] == (_previousBalance - _withdrawAmount));
+      tasks.push(
+        Task(
+          numOfTasks,
+          _taskName, 
+          false
+        )
+      );
 
-        // emit the event
-        emit Withdraw(_withdrawAmount);
+      activities.push(
+        Activity(
+          ActivityType.ADD_TASK, 
+          numOfTasks,
+          owner, 
+          0)
+        );
 
-        // add the transaction
-        transactions.push(Transaction(TransactionType.WITHDRAW, owner, address(this), _withdrawAmount));
+      // emit the event
+      emit AddTask(owner, numOfTasks, _taskName);
     }
 
-    function transfer(address payable _receiverAddress, uint256 _transferAmount) public {
-        require(msg.sender == owner, "You are not the owner of this account");
+    function completeTask(uint256 _taskID) public {
+      bool found = false;
+      
+      // check if the task exists and is not completed yet
+      for (uint i = 0; i < activities.length; i++) {
+          if (keccak256(abi.encodePacked(tasks[i].taskID)) == keccak256(abi.encodePacked(_taskID))) {
+              if (!tasks[i].isCompleted) {
+                tasks[i].isCompleted = true;
+                found = true;
 
-        if (balances[owner] < _transferAmount) {
-            revert InsufficientBalance({
-                balance: balances[owner],
-                amount: _transferAmount
-            });
-        }
+                activities.push(
+                  Activity(
+                    ActivityType.COMPLETE_TASK,  
+                    tasks[i].taskID,
+                    msg.sender, 
+                    0
+                  )
+                );
 
-        balances[owner] -= _transferAmount;
-        balances[_receiverAddress] += _transferAmount;
+                numOfCompletedTasks++;
 
-        emit Transfer(owner, _receiverAddress, _transferAmount);
+                // emit the event
+                emit CompleteTask(msg.sender, tasks[i].taskID, tasks[i].taskName);
 
-        transactions.push(Transaction(TransactionType.TRANSFER, _receiverAddress, owner, _transferAmount));
+                break;
+              } else {
+                revert("Task is already completed!");  
+              }
+          }
+      }
+      
+      if (!found) {
+          revert("There is no such task!");
+      }
+
+      updateBalance();
     }
 
-    function getTransactions() public view returns(Transaction[] memory) {
+    function updateBalance() public {
       require(msg.sender == owner, "You are not the owner of this account");
-      return transactions;
+
+      // if numOfCompletedTasks is divisible by taskPerReward, 
+      // add 1 to the balance and reset the numOfCompletedTasks
+      if (numOfCompletedTasks % taskPerReward == 0) {
+        balances[owner] += 1;
+        numOfCompletedTasks = 0;
+
+        emit UpdateBalance(owner, balances[owner]);
+      }
+    }
+
+    function getRewards() public {
+        require(msg.sender == owner, "You are not the owner of this account");
+        require(balances[owner] > 0, "You have no rewards to claim");
+
+        uint _previousBalance = balances[owner];
+        balances[owner] = 0; 
+        assert(balances[owner] == 0);
+
+        activities.push(
+          Activity(
+            ActivityType.GET_REWARDS, 
+            0,
+            owner, 
+            _previousBalance
+          )
+        );
+
+        emit GetReward(owner, _previousBalance);
+    }
+
+    function getTasks() public view returns(Task[] memory) {
+      require(msg.sender == owner, "You are not the owner of this account");
+      return tasks;
+    }
+
+    function getActivities() public view returns(Activity[] memory) {
+      require(msg.sender == owner, "You are not the owner of this account");
+      return activities;
     }
 }

@@ -1,10 +1,10 @@
 # MC_ETHAVAX-M2_Project
 
-The project is a simple smart contract management for withdrawing, depositing, and transferring.
+The project is a simple smart contract management for task management and reward redemption.
 
 ## Description
 
-This is in fulfillment of the second module of the ETH + AVAX Intermediate course in Metacrafters. The provided starter project from Metacrafters included connecting to MetaMask, depositing to the ATM, and withdrawing from the ATM among others. A few things were then added to the project, such as transferring the token, the structure for the transactions, and the actual transaction history. The deposit and withdraw functions that were provided were modified so that they would be shown in the transaction history. The frontend was also updated to accommodate the changes that were made.
+This is in fulfillment of the second module of the ETH + AVAX Intermediate course in Metacrafters. The provided starter project from Metacrafters included connecting to MetaMask, depositing, and withdrawing. The code was then modified and a few things were added to the project, such as adding new tasks, completing tasks, redeeming rewards, the structure for the tasks and activities, and the actual activity history and uncompleted tasks list. The frontend was also updated to accommodate the changes that were made.
 
 ## Getting Started
 
@@ -23,21 +23,26 @@ This is in fulfillment of the second module of the ETH + AVAX Intermediate cours
 
 ### How to Use
 
-1. When the frontend launches in your tab, it should look like ***Figure 1*** if you already have MetaMask. If you haven't setup MetaMask yet, now is the time to do so as it is crucial for the next parts. The network would depend on whether you're using localhost or Gitpod. If Gitpod, check your **PORTS** again and copy the address from there. If localhost, then it may be found on [http://127.0.0.1:8545/](http://127.0.0.1:8545/).  
+1. When the frontend launches in your tab, it should look like ***Figure  [1](public/fig1.png)*** if you already have MetaMask. If you haven't setup MetaMask yet, now is the time to do so as it is crucial for the next parts. The network would depend on whether you're using localhost or Gitpod. If Gitpod, check your **PORTS** again and copy the address from there. If localhost, then it may be found on [http://127.0.0.1:8545/](http://127.0.0.1:8545/).  
 2. Once you've connected to MetaMask, your page should look like ***Figure 2***. In here, you may do a few things.  
-  2.1. **DEPOSIT ETH** - In here, you may deposit to the ATM. The default amount is 1 ETH, however you can change it using the input next to the `Amount:` label.  
-  2.2. **WITHDRAW ETH** - In here, you may withdraw to the ATM. The default amount is 1 ETH, however you can change it using the input next to the `Amount:` label. Make sure that you won't withdraw an amount that is more than your balance.  
-  2.3. **TRANSFER ETH** - In here, you may transfer to another account's balance. The default amount is 1 ETH, however you can change it using the input next to the `Amount:` label. You can also set the address to transfer to using the input next to the `Send to:` label. Make sure that you won't transfer an amount that is more than your balance.  
-  2.4. **SHOW AND HIDE TRANSACTION HISTORY**  - In here, you may show or hide all your previous transactions. By default, your previous transactions are hidden. If you want to show or hide them, then just click on this toggle button. If you show transaction history, your page should look like similar to ***Figure 3***. If not, it should look like ***Figure 2***. When your transaction history is showing, you also have the option to show or hide the address of those you transferred to by toggling it.  
+  2.1. **ADD TASK** - In here, you may add a new task. The default task name is `New Task`, however you can change it using the input next to the `Task Name:` label.  
+  2.2. **COMPLETE TASK** - In here, you may complete a certain task. You may only complete a task if the uncompleted tasks list is being shown. To show or hide these tasks, refer to 2.4. To complete the task, just click on this button next to the task with that name.  
+  2.3. **REDEEM REWARDS** - In here, you may redeem your current rewards. Currently, it is set to 3 completed rewards results in 1 ETH added to your balance which you can then redeem using this button.  
+  2.4. **SHOW AND HIDE UNCOMPLETED TASKS**  - In here, you may show or hide all your currently uncompleted tasks. By default, the tasks are shown. If you want to show or hide them, just click on the toggle. If you show it, your page should look like similar to ***Figure [3]***. When your uncompleted tasks are being shown, you also have the option to complete the task by clicking the `Complete Task` button next to it.  
+  2.5. **SHOW AND HIDE ACTIVITY HISTORY**  - In here, you may show or hide all your previous activities. By default, your previous activities are hidden. If you want to show or hide them, then just click on this toggle button. If you show activity history, your page should look like similar to ***Figure [3](public/fig3.png)***.  
+  2.6. **SHOW AND HIDE USER ADDRESS**  - In here, you may show or hide your user address. By default, it is hidden. If you want to show or hide it, then just click on it. If you have the address hidden, your page should look like similar to ***Figures [2](public/fig2.png)***  or [3](public/fig3.png). If it's showing, it should look similar to ***Figure [4](public/fig4.png)***.  
 
 ![Figure 1](public/fig1.png)  
 *Figure 1: Not connected to MetaMask yet*  
 
 ![Figure 2](public/fig2.png)  
-*Figure 2: Connected to MetaMask (Transaction History Hidden)*  
+*Figure 2: Connected to MetaMask (Tasks Shown, Activity History Hidden)*  
 
-![Figure 3](public/fig3.png)  
-*Figure 3: Connected to MetaMask (Transaction History Shown)*  
+![Figure 3](public/fig3.png)
+*Figure 3: Activity History Shown*
+
+![Figure 4](public/fig4.png)
+*Figure 4: User Address Shown*
 
 ## Help
 

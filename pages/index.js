@@ -1,4 +1,4 @@
-import {useState, useEffect, use} from "react";
+import {useState, useEffect} from "react";
 import {ethers} from "ethers";
 import atm_abi from "../artifacts/contracts/Assessment.sol/Assessment.json";
 
@@ -7,12 +7,14 @@ export default function HomePage() {
   const [account, setAccount] = useState(undefined);
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
-  const [rcvrAddress, setRcvrAddress] = useState("");
-  const [amount, setAmount] = useState(1);
+  const [showUserAddress, setShowUserAddress] = useState(false);
 
-  const [transactions, setTransactions] = useState([]);
-  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
-  const [receiverAddressShown, setReceiverAddressShown] = useState({});
+  const [taskName, setTaskName] = useState("New Task");
+  const [tasks, setTasks] = useState([]);  
+  const [showTasks, setShowTasks] = useState(true);
+
+  const [activities, setActivities] = useState([]);
+  const [showActivityHistory, setShowActivityHistory] = useState(false);
 
   const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const atmABI = atm_abi.abi;
@@ -65,51 +67,65 @@ export default function HomePage() {
     }
   }
 
-  const deposit = async() => {
+  const addTask = async() => {
     if (atm) {
-      let tx = await atm.deposit(amount);
+      let tx = await atm.addTask(taskName)
+      await tx.wait()
+      getAndSetTasks();
+      getAndSetActivities();
+    }
+  }
+
+  const completeTask = async(_taskID) => {
+    if (atm) {
+      let tx = await atm.completeTask(_taskID);
       await tx.wait()
       getBalance();
-      getAndSetTransactions();
+      getAndSetTasks();
+      getAndSetActivities();
     }
   }
 
-  const withdraw = async() => {
+  const redeemRewards = async() => {
     if (atm) {
-      let tx = await atm.withdraw(amount);
+      let tx = await atm.getRewards();
       await tx.wait()
       getBalance();
-      getAndSetTransactions();
+      getAndSetActivities();
     }
   }
 
-  const transfer = async() => {
+  const getAndSetActivities = async() => {
     if (atm) {
-      let tx = await atm.transfer(rcvrAddress, amount);
-      await tx.wait()
-      getBalance();
-      getAndSetTransactions();
+      let txs = await atm.getActivities();
+      setActivities(txs);
     }
   }
 
-  const getAndSetTransactions = async() => {
+  const getAndSetTasks = async() => {
     if (atm) {
-      let txs = await atm.getTransactions();
-      setTransactions(txs);
+      let txs = await atm.getTasks();
+      setTasks(txs);
     }
   }
 
-  const toggleTransactionHistory = () => {
-    setShowTransactionHistory(!showTransactionHistory);
-    getAndSetTransactions();
+  const getTaskNames = (_taskID) => {
+    // console.log("Task ID: ", _taskID);
+    const task = tasks.find(task => task.taskID == _taskID);
+    return task ? task.taskName : "";
   }
 
-  const toggleReceiverAddress = (index) => {
-    setReceiverAddressShown(prevState => ({
-      ...prevState,
-      [index]: !prevState[index]
-    }));
-  };
+  const toggleUserAddress = () => {
+    setShowUserAddress(!showUserAddress);
+  }
+
+  const toggleActivityHistory = () => {
+    setShowActivityHistory(!showActivityHistory);
+  }
+
+  const toggleTasks = () => {
+    setShowTasks(!showTasks);
+  }
 
 
   const initUser = () => {
@@ -129,98 +145,135 @@ export default function HomePage() {
 
     return (
       <div>
-        <p>Your Account: {account}</p>
-        <p>Your Balance: {balance}</p>
-
-        <div>
-          <label>Amount: </label>
-          <input type="text" value={amount}
-            onChange={(e) => setAmount(e.target.value)} />
-        </div>
-
-        <div>
-          <button onClick={deposit}>Deposit ETH</button>
-          <button onClick={withdraw}>Withdraw ETH</button>
-        </div>
-
-        <div>
-          <label>Send to: </label>
-          <input type="text" value={rcvrAddress}
-            onChange={(e) => setRcvrAddress(e.target.value)} />
-          <button onClick={transfer}>Transfer ETH</button>
-        </div>
         
-        <button
-          onClick={toggleTransactionHistory}>{
-          showTransactionHistory ? 
-          "Hide Transaction History" : 
-          "Show Transaction History"} 
-        </button>
+        <div>
+          <p>Your Account: 
+            <button className="userAddressButton"
+              onClick={toggleUserAddress}>
+            {showUserAddress ? (
+              <p className="userAddressShown">
+                {account}
+              </p>
+            ) : (
+              <p className="userAddressHidden">
+                00000000000000000000000000000000000000
+              </p>
+            )
+            }
+            </button>
+          </p>
+        </div>
 
-        {showTransactionHistory && (
-          <div>
-            <h2>Transaction History</h2>
+        <div className="rewardsContainer">
+          <p>Your Current Rewards: {balance}</p>
+          <button onClick={redeemRewards}>Redeem Rewards</button>
+        </div>
 
-              <ul className = "transactionsList">
-                {[...transactions].reverse().map((tx, index) => {
-                  let _type = "";
-                  let _amt = parseInt(tx.amount);
-                  let _ft = "";
-                  let _rcvr = "";
-                  let receiverButtonStyle = {
-                    padding: 0,
-                    border: "none",
-                    background: "none",
-                  }
+        <div>
+          <label>Task Name: </label>
+          <input type="text" value={taskName}
+            className="taskNameInput"
+            onChange={(e) => setTaskName(e.target.value)} />
+          <button onClick={addTask}>Add Task</button>
+        </div>
 
-                  if (tx.transactionType === 0) {
-                    _type = "deposited";
-                    _ft = "to";
-                    _rcvr = "the ATM";
-                  } else if (tx.transactionType === 1) {
-                    _type = "withdrew";
-                    _ft = "from";
-                    _rcvr = "the ATM";
-                  } else if (tx.transactionType === 2) {
-                    _type = "transferred";
-                    _ft = "to";
+        <div className="listContainer">
 
-                    _rcvr = receiverAddressShown[transactions.length - index] ? 
-                      tx.receiverAddress : "000000000000000000000000000000000000000000";
-                    if (_rcvr === "000000000000000000000000000000000000000000") {
-                      receiverButtonStyle = {
-                        padding: 0,
-                        border: "none",
-                        background: "black",
-                        color: "black",
+          <div className="listContainerChild">
+            <button
+              onClick={toggleTasks}>{
+              showTasks ? 
+              "Hide Tasks" : 
+              "Show Tasks"} 
+            </button>
+
+            {showTasks && (
+              <div>
+                <h2>Your Current Tasks</h2>
+                {tasks.length === 0 && 
+                  <p>You don't have tasks yet.</p>
+                }
+                  <ul className = "list">
+                    {[...tasks].reverse().map((tx, index) => {
+                      let _ID = JSON.parse(tx.taskID, 16)
+                      let _name = getTaskNames(_ID);
+
+                      if (tx.isCompleted === false) {
+                        return (
+                          <li key={index}>
+                            <b>Task #{_ID}: </b>  
+                            {_name}
+                            <button onClick={() => completeTask(_ID)}>Complete Task</button>
+                          </li>
+                        )
                       }
-                    }
-                  }
+                    })}
+                  </ul>
 
-                  return (
-                    <li key={index}>
-                      <b>Transaction #{transactions.length - index}</b>: 
-                      You {_type} {_amt} ETH {_ft} 
-                      <button style={receiverButtonStyle} 
-                        onClick={() => toggleReceiverAddress(transactions.length - index)}>
-                        {_rcvr} 
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+              </div>
+            )}
 
           </div>
-        )}
+
+          <div className="listContainerChild">
+            <button
+              onClick={toggleActivityHistory}>{
+              showActivityHistory ? 
+              "Hide Activity History" : 
+              "Show Activity History"} 
+            </button>
+
+            {showActivityHistory && (
+              <div>
+                <h2>Activity History</h2>
+
+                {activities.length === 0 && 
+                  <p>You have no previous activity.</p>
+                }
+
+                  <ul className = "list">
+                    {[...activities].reverse().map((tx, index) => {
+                      let _type = "";
+                      let _name = "";
+
+                      if (tx.activityType === 0) { //ADD_TASK
+                        _type = "added a new task: ";
+                        _name = getTaskNames(JSON.parse(tx.taskID,16));
+                      } else if (tx.activityType === 1) { //COMPLETE_TASK
+                        _type = "completed the task: ";
+                        _name = getTaskNames(JSON.parse(tx.taskID,16));
+                      } else if (tx.activityType === 2) { //GET_REWARDS
+                        _type = `redeemed your rewards 
+                          (${JSON.parse(tx.amount,16)} ETH). 
+                          Congratulations!`;
+                      }
+
+                      return (
+                        <li key={index}>
+                          <b>Activity #{activities.length - index}</b>: 
+                          You {_type} {_name}
+                        </li>
+                      )
+                    })}
+                  </ul>
+
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
     )
   }
 
-  useEffect(() => {getWallet();  }, []);
+  useEffect(() => {
+    getWallet(); 
+  }, []);
 
   return (
     <main className="container">
-      <header><h1>Welcome to the Metacrafters ATM!</h1></header>
+      <header><h1>Welcome!</h1></header>
+      <hr/>
       {initUser()}
     </main>
   )
