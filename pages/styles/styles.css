@@ -32,6 +32,10 @@ button {
   justify-content: center;
 }
 
+.listContainer > button {
+  max-height: 2.5em;
+}
+
 .listContainerChild {
   margin: 1em;
   padding: 1em;
@@ -39,8 +43,8 @@ button {
   width: 30em;
 }
 
-.listContainer > button {
-  max-height: 2.5em;
+.completeTaskButton {
+  margin: 0 0 1em 0.5em; 
 }
 
 .list {

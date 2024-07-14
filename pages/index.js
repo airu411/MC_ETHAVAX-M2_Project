@@ -203,7 +203,10 @@ export default function HomePage() {
                           <li key={index}>
                             <b>Task #{_ID}: </b>  
                             {_name}
-                            <button onClick={() => completeTask(_ID)}>Complete Task</button>
+                            <button className="completeTaskButton"
+                              onClick={() => completeTask(_ID)}>
+                                Complete Task
+                            </button>
                           </li>
                         )
                       }

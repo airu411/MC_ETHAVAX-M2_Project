@@ -82,7 +82,7 @@ contract Assessment {
       bool found = false;
       
       // check if the task exists and is not completed yet
-      for (uint i = 0; i < activities.length; i++) {
+      for (uint i = 0; i < tasks.length; i++) {
           if (keccak256(abi.encodePacked(tasks[i].taskID)) == keccak256(abi.encodePacked(_taskID))) {
               if (!tasks[i].isCompleted) {
                 tasks[i].isCompleted = true;
